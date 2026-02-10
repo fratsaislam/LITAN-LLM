@@ -47,11 +47,12 @@ const conversationSchema = new mongoose.Schema(
     },
 
     // 🔗 Optional links
-    exerciseId: {
+    userExerciseId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Exercise",
+      ref: "UserExercise",
       default: null,
     },
+
 
     experimentId: {
       type: mongoose.Schema.Types.ObjectId,

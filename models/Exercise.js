@@ -12,10 +12,9 @@ const exerciseSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Optional experiment binding
-    groupId: {
+    // Optional: exercise belongs to an experiment
+    experimentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ExperimentGroup",
       default: null,
     },
 

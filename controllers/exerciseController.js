@@ -1,10 +1,11 @@
 const Exercise = require("../models/Exercise");
 const ExperimentGroup = require("../models/ExperimentGroup");
+const UserExercise = require("../models/UserExercise");
 
 
 exports.createExercise = async (req, res) => {
   try {
-    const { title, markdownContent, groupId, isActive } = req.body;
+    const { title, markdownContent, experimentId, isActive } = req.body;
 
     // Validation
     if (!title || !markdownContent) {
@@ -14,9 +15,9 @@ exports.createExercise = async (req, res) => {
       });
     }
 
-    // If groupId is provided, verify it exists
-    if (groupId) {
-      const group = await ExperimentGroup.findById(groupId);
+    // If experimentId is provided, verify it exists
+    if (experimentId) {
+      const group = await ExperimentGroup.findById(experimentId);
       if (!group) {
         return res.status(404).json({
           success: false,
@@ -29,12 +30,9 @@ exports.createExercise = async (req, res) => {
     const newExercise = await Exercise.create({
       title,
       markdownContent,
-      groupId: groupId || null,
+      experimentId: experimentId || null,
       isActive: isActive !== undefined ? isActive : true
     });
-
-    // Populate groupId if present
-    await newExercise.populate("groupId");
 
     res.status(201).json({
       success: true,
@@ -55,7 +53,7 @@ exports.createExercise = async (req, res) => {
 exports.editExercise = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, markdownContent, groupId, isActive } = req.body;
+    const { title, markdownContent, experimentId, isActive } = req.body;
 
     // Check if exercise exists
     const exercise = await Exercise.findById(id);
@@ -66,9 +64,9 @@ exports.editExercise = async (req, res) => {
       });
     }
 
-    // If groupId is being changed, verify it exists
-    if (groupId && groupId !== exercise.groupId?.toString()) {
-      const group = await ExperimentGroup.findById(groupId);
+    // If experimentId is being changed, verify it exists
+    if (experimentId && experimentId !== exercise.experimentId?.toString()) {
+      const group = await ExperimentGroup.findById(experimentId);
       if (!group) {
         return res.status(404).json({
           success: false,
@@ -80,11 +78,10 @@ exports.editExercise = async (req, res) => {
     // Update fields
     if (title) exercise.title = title;
     if (markdownContent) exercise.markdownContent = markdownContent;
-    if (groupId !== undefined) exercise.groupId = groupId || null;
+    if (experimentId !== undefined) exercise.experimentId = experimentId || null;
     if (isActive !== undefined) exercise.isActive = isActive;
 
     await exercise.save();
-    await exercise.populate("groupId");
 
     res.status(200).json({
       success: true,
@@ -104,14 +101,14 @@ exports.editExercise = async (req, res) => {
 
 exports.getAllExercises = async (req, res) => {
   try {
-    const { groupId, isActive } = req.query;
+    const { experimentId, isActive } = req.query;
     
     // Build query filter
     const filter = {};
-    if (groupId) filter.groupId = groupId;
+    if (experimentId) filter.experimentId = experimentId;
     if (isActive !== undefined) filter.isActive = isActive === "true";
 
-    const exercises = await Exercise.find(filter).populate("groupId");
+    const exercises = await Exercise.find(filter);
     
     res.status(200).json({
       success: true,
@@ -127,11 +124,10 @@ exports.getAllExercises = async (req, res) => {
   }
 };
 
-
 exports.getExerciseById = async (req, res) => {
   try {
     const { id } = req.params;
-    const exercise = await Exercise.findById(id).populate("groupId");
+    const exercise = await Exercise.findById(id);
     
     if (!exercise) {
       return res.status(404).json({
@@ -154,7 +150,6 @@ exports.getExerciseById = async (req, res) => {
   }
 };
 
-
 exports.deleteExercise = async (req, res) => {
   try {
     const { id } = req.params;
@@ -176,6 +171,141 @@ exports.deleteExercise = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete exercise",
+      error: err.message
+    });
+  }
+};
+
+/**
+ * Assign exercise to users
+ */
+exports.assignExerciseToUsers = async (req, res) => {
+  try {
+    const { exerciseId, groupId, userIds } = req.body;
+
+    // Validation
+    if (!exerciseId || !groupId || !userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "exerciseId, groupId, and userIds array are required"
+      });
+    }
+
+    // Verify exercise exists
+    const exercise = await Exercise.findById(exerciseId);
+    if (!exercise) {
+      return res.status(404).json({
+        success: false,
+        message: "Exercise not found"
+      });
+    }
+
+    // Verify group exists
+    const group = await ExperimentGroup.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Experiment group not found"
+      });
+    }
+
+    // Assign exercise to users
+    const assignments = userIds.map(userId => ({
+      userId,
+      anonymizedUserId: "",
+      exerciseId,
+      groupId,
+      status: "assigned"
+    }));
+
+    const createdAssignments = await UserExercise.insertMany(assignments, { ordered: false }).catch(err => {
+      return err.insertedDocs || [];
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Assigned exercise to ${createdAssignments.length} users`,
+      data: createdAssignments
+    });
+  } catch (err) {
+    console.error("Error assigning exercise:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to assign exercise",
+      error: err.message
+    });
+  }
+};
+
+/**
+ * Get user's exercises
+ */
+exports.getUserExercises = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.query;
+
+    const filter = { userId };
+    if (status) filter.status = status;
+
+    const userExercises = await UserExercise.find(filter)
+      .populate("exerciseId")
+      .populate("groupId");
+
+    res.status(200).json({
+      success: true,
+      data: userExercises
+    });
+  } catch (err) {
+    console.error("Error fetching user exercises:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch user exercises",
+      error: err.message
+    });
+  }
+};
+
+/**
+ * Update user exercise status
+ */
+exports.updateUserExerciseStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !["assigned", "in_progress", "completed"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid status (assigned, in_progress, completed) is required"
+      });
+    }
+
+    const userExercise = await UserExercise.findById(id);
+    if (!userExercise) {
+      return res.status(404).json({
+        success: false,
+        message: "User exercise assignment not found"
+      });
+    }
+
+    userExercise.status = status;
+    if (status === "completed") {
+      userExercise.completedAt = new Date();
+    }
+
+    await userExercise.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User exercise status updated successfully",
+      data: userExercise
+    });
+  } catch (err) {
+    console.error("Error updating user exercise:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user exercise status",
       error: err.message
     });
   }
