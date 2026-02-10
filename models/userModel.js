@@ -55,7 +55,20 @@ const userSchema = mongoose.Schema({
     forgotPasswordCodeValidation:{
         type: Number,
         select: false,
-    }
+    },
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ExperimentGroup",
+      default: null,
+    },
+
+    // 🔒 For anonymized analytics
+    anonymizedId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
 },{
     timestamps : true
 })
