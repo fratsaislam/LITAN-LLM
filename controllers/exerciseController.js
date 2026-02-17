@@ -181,13 +181,13 @@ exports.deleteExercise = async (req, res) => {
  */
 exports.assignExerciseToUsers = async (req, res) => {
   try {
-    const { exerciseId, groupId, userIds } = req.body;
+    const { exerciseId, groupId } = req.body;
 
     // Validation
-    if (!exerciseId || !groupId || !userIds || !Array.isArray(userIds) || userIds.length === 0) {
+    if (!exerciseId || !groupId ) {
       return res.status(400).json({
         success: false,
-        message: "exerciseId, groupId, and userIds array are required"
+        message: "exerciseId and groupId are required"
       });
     }
 
@@ -201,7 +201,7 @@ exports.assignExerciseToUsers = async (req, res) => {
     }
 
     // Verify group exists
-    const group = await ExperimentGroup.findById(groupId);
+    const group = await ExperimentGroup.findById(groupId).populate("users");
     if (!group) {
       return res.status(404).json({
         success: false,
@@ -209,24 +209,26 @@ exports.assignExerciseToUsers = async (req, res) => {
       });
     }
 
-    // Assign exercise to users
-    const assignments = userIds.map(userId => ({
-      userId,
-      anonymizedUserId: "",
-      exerciseId,
-      groupId,
-      status: "assigned"
+    const usersData = group.users.map(u => ({
+      userId: u._id,
+      anonymizedId: u.anonymizedId
     }));
 
-    const createdAssignments = await UserExercise.insertMany(assignments, { ordered: false }).catch(err => {
-      return err.insertedDocs || [];
-    });
+    const assignments = usersData.map(user => ({
+      userId: user.userId,
+      anonymizedUserId: user.anonymizedId,
+      exerciseId,
+      groupId
+    }))
 
-    res.status(201).json({
+    data = await UserExercise.insertMany(assignments);
+
+    res.status(200).json({
       success: true,
-      message: `Assigned exercise to ${createdAssignments.length} users`,
-      data: createdAssignments
+      message: "Exercise assigned to users successfully",
+      data
     });
+    
   } catch (err) {
     console.error("Error assigning exercise:", err);
     res.status(500).json({

@@ -2,20 +2,17 @@ const mongoose = require("mongoose");
 
 const experimentGroupSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      unique: true,
+    name: { 
+        type: String,
+        required: true, 
+        unique: true },
+    description: { 
+      type: String 
     },
 
-    description: {
-      type: String,
-    },
-
-    // 👁 Hidden prompt manipulation
-    promptTweaks: {
-      type: String, // system instructions
-      required: true,
+    promptTweaks: { 
+      type: String, 
+      required: true 
     },
 
     assignmentType: {
@@ -24,17 +21,25 @@ const experimentGroupSchema = new mongoose.Schema(
       default: "random",
     },
 
-    assignmentRules: {
-      type: Object, // JSON for future logic
-      default: null,
+    assignmentRules: { 
+      type: Object, 
+      default: null 
     },
 
-    isActive: {
-      type: Boolean,
-      default: true,
+    isActive: { 
+      type: Boolean, 
+      default: true 
     },
+
+    users: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );
+
 
 module.exports = mongoose.model("ExperimentGroup", experimentGroupSchema);

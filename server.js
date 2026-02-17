@@ -10,6 +10,7 @@ const app = express();
 const authRouter = require("./routers/authRouter");
 const groupRouter = require("./routers/groupRouter");
 const exerciseRouter = require("./routers/exerciseRouter");
+const convRouter = require("./routers/convRouter");
 
 
 const allowedOrigins = [
@@ -37,6 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRouter);
 app.use("/api/groups", groupRouter);
 app.use("/api/exercises", exerciseRouter);
+app.use("/api/conv", convRouter);
 
 
 

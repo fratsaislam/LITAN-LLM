@@ -34,7 +34,7 @@ exports.signup = async (req, res) => {
             phone,
             birth,
             anonymizedId,
-            role : "admin"
+            // role : "admin"
         });
 
         result.password = undefined;
