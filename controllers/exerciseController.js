@@ -26,7 +26,7 @@ exports.createExercise = async (req, res) => {
       }
     }
 
-    // Create new exercise
+    // Create new exerciseW
     const newExercise = await Exercise.create({
       title,
       markdownContent,
