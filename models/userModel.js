@@ -27,10 +27,10 @@ const userSchema = mongoose.Schema({
         type: Number,
         required: true
     },
-    birth:{
-        type: Date,
-        required: true
-    },
+    // birth:{
+    //     type: Date,
+    //     required: true
+    // },
     role: {
         type: String,
         enum: ['user', 'admin'], // limits values

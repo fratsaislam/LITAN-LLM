@@ -11,7 +11,7 @@ const {OAuth2Client} = require('google-auth-library');
 require('dotenv').config();
 
 exports.signup = async (req, res) => {
-    const { email, password, username, birth, phone} = req.body;
+    const { email, password, username, phone} = req.body;
     try{
         const {error, value} = signupSchema.validate({ email, password, username, phone });
         if(error){
@@ -32,7 +32,7 @@ exports.signup = async (req, res) => {
             password: hashedPassword,
             username,
             phone,
-            birth,
+            // birth,
             anonymizedId,
             // role : "admin"
         });
@@ -162,7 +162,7 @@ exports.googleOAuth = async (req, res) => {
             username: name || email.split('@')[0],
             profilePic: picture,
             phone: 0,
-            birth: new Date(),
+            // birth: new Date(),
             verified: true
         });
         
