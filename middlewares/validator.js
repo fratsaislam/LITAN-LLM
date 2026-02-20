@@ -12,6 +12,18 @@ exports.signupSchema = Joi.object({
     phone: Joi.string().required().pattern(/^\d{10}$/),
 });
 
+exports.signupSchemaGoogle = Joi.object({
+    email: Joi.string().min(6).max(60).required()
+      .email({
+        tlds: { allow: ['dz'] },
+      }).pattern(/@estin\.dz$/).messages({
+      "string.pattern.base": "Email must be an @estin.dz address"
+    }),
+    password: Joi.string().pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$')),
+    username: Joi.string().pattern(/^[A-Za-z]+$/),
+    phone: Joi.string().pattern(/^\d{10}$/),
+});
+
 exports.signinSchema = Joi.object({
     email: Joi.string().min(6).max(60).required()
       .email({

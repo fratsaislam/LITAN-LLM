@@ -1,4 +1,4 @@
-const { signupSchema, signinSchema, changePasswordSchema, acceptCodeSchema, accpetFPCodeSchema, changeEmailSchema } = require("../middlewares/validator");
+const { signupSchema, signupSchemaGoogle, signinSchema, changePasswordSchema, acceptCodeSchema, accpetFPCodeSchema, changeEmailSchema } = require("../middlewares/validator");
 const User = require("../models/userModel");
 const { v4: uuidv4 } = require("uuid");
 const {doHash, doHashValidator, hmacProcess} = require("../utils/hashing");
@@ -122,11 +122,11 @@ exports.googleOAuth = async (req, res) => {
                 message: 'Google account not verified or invalid' 
             });
         }
-        const {error, value} = signupSchema.validate({ email })
+        const {error, value} = signupSchemaGoogle.validate({ email })
         if(error){
             return res.status(401).json({ success: false, message: error.details[0].message });
         }
-        
+
         // Determine environment ONCE at the top
         const isProduction = process.env.NODE_ENV === 'production';
         
