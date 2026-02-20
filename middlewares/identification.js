@@ -24,5 +24,6 @@ exports.identifier = (req, res, next) => {
         }
     }catch(err){
         console.log(err);
+        return res.status(403).json({success: false, message: "Invalid or expired token"});
     }
 }

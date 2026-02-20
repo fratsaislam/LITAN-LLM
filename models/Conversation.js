@@ -26,13 +26,18 @@ const conversationSchema = new mongoose.Schema(
     groupId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ExperimentGroup",
-      required: true,
+      default: null,
       index: true,
     },
 
+    title: {
+      type: String,
+      default: "New Conversation",
+    },
+
     model: {
-      type: String, // gpt-4, deepseek, etc.
-      required: true,
+      type: String, // llama-3.3-70b-versatile, etc.
+      default: "llama-3.3-70b-versatile",
     },
 
     messages: {
@@ -40,11 +45,11 @@ const conversationSchema = new mongoose.Schema(
       required: true,
     },
 
-    tokenUsage: {
-      promptTokens: Number,
-      completionTokens: Number,
-      totalTokens: Number,
-    },
+    // tokenUsage: {
+    //   promptTokens: Number,
+    //   completionTokens: Number,
+    //   totalTokens: Number,
+    // },
 
     // 🔗 Optional links
     userExerciseId: {
