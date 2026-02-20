@@ -24,7 +24,7 @@ const userExerciseSchema = new mongoose.Schema(
     groupId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ExperimentGroup",
-      required: true,
+      default: null,
     },
 
     status: {
@@ -37,6 +37,19 @@ const userExerciseSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    result: {
+      type: String,
+      default: null,
+    },
+
+    chatHistory: [
+      {
+        role: { type: String, enum: ["user", "assistant", "system"] },
+        content: { type: String },
+        _id: false,
+      },
+    ],
   },
   { timestamps: true }
 );

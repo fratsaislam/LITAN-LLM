@@ -56,6 +56,7 @@ const conversationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserExercise",
       default: null,
+      index: true, // Add index for faster lookups
     },
 
 

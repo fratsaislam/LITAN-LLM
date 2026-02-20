@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const {doHash, doHashValidator, hmacProcess} = require("../utils/hashing");
 const jwt = require("jsonwebtoken");
 const transport = require("../middlewares/sendMail");
+const ExperimentGroup = require("../models/ExperimentGroup");
 const cloudinary = require("../utils/cloudinary");
 const fs = require("fs");
 const {OAuth2Client} = require('google-auth-library');
@@ -27,14 +28,30 @@ exports.signup = async (req, res) => {
 
         const hashedPassword = await doHash(password, 12);
         const anonymizedId = uuidv4();
+
+        // Find or create the Default group
+        let defaultGroup = await ExperimentGroup.findOne({ name: "Default" });
+        if (!defaultGroup) {
+            defaultGroup = await ExperimentGroup.create({
+                name: "Default",
+                description: "Default group for all new users",
+                promptTweaks: "You are a helpful AI learning assistant.",
+                isActive: true,
+            });
+        }
+
         const result = await User.create({
             email,
             password: hashedPassword,
             username,
             phone,
-            // birth,
             anonymizedId,
-            // role : "admin"
+            groupId: defaultGroup._id,
+        });
+
+        // Add user to the group's users array
+        await ExperimentGroup.findByIdAndUpdate(defaultGroup._id, {
+            $addToSet: { users: result._id },
         });
 
         result.password = undefined;
@@ -163,15 +180,31 @@ exports.googleOAuth = async (req, res) => {
         const hashedPassword = await doHash(randomPass, 12);
         const anonymizedId = uuidv4();
 
+        // Find or create the Default group
+        let defaultGroup = await ExperimentGroup.findOne({ name: "Default" });
+        if (!defaultGroup) {
+            defaultGroup = await ExperimentGroup.create({
+                name: "Default",
+                description: "Default group for all new users",
+                promptTweaks: "You are a helpful AI learning assistant.",
+                isActive: true,
+            });
+        }
+
         const newUser = await User.create({
             email,
             password: hashedPassword,
             username: name || email.split('@')[0],
             profilePic: picture,
             phone: 0,
-            // birth: new Date(),
             verified: true,
-            anonymizedId
+            anonymizedId,
+            groupId: defaultGroup._id,
+        });
+
+        // Add user to the group's users array
+        await ExperimentGroup.findByIdAndUpdate(defaultGroup._id, {
+            $addToSet: { users: newUser._id },
         });
         
         const token = jwt.sign({
@@ -501,9 +534,21 @@ exports.checkAuth = async (req, res) => {
       
       const user = jwt.verify(token, process.env.TOKEN_SECRET)
         
+      // Also fetch actual user from DB for groupId and anonymizedId
+      const dbUser = await User.findById(user.userId).populate('groupId');
       return res.status(200).json({ 
         success: true, 
-        user: { email: user.email, username: user.username, profilePic: user.profilePic, phone: user.phone, role: user.role },
+        user: { 
+          _id: user.userId,
+          email: user.email, 
+          username: user.username, 
+          profilePic: user.profilePic, 
+          phone: user.phone, 
+          role: user.role,
+          anonymizedId: dbUser?.anonymizedId || user.anonymizedId,
+          groupId: dbUser?.groupId?._id || dbUser?.groupId || null,
+          groupName: dbUser?.groupId?.name || null,
+        },
         message: 'Authenticated' 
     });
     
@@ -524,9 +569,17 @@ exports.getAllUsers = async (req, res) => {
                 pageNum = 0;
             }
     
-            const result = await User.find().sort({ createdAt: -1 }).skip(pageNum * usersPerPage).limit(usersPerPage);
+            const result = await User.find().sort({ createdAt: -1 }).skip(pageNum * usersPerPage).limit(usersPerPage).populate('groupId', 'name');
 
-            res.status(200).json({ success: true, message: 'users', data: result });
+            // Map groupId to groupName for frontend
+            const users = result.map(u => {
+                const obj = u.toObject();
+                obj.groupName = obj.groupId?.name || null;
+                obj.groupIdValue = obj.groupId?._id || null;
+                return obj;
+            });
+
+            res.status(200).json({ success: true, message: 'users', data: users });
         }catch(err){
             console.log(err);
         }

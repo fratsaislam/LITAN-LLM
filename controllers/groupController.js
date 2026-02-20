@@ -1,4 +1,5 @@
 const ExperimentGroup = require("../models/ExperimentGroup");
+const User = require("../models/userModel");
 
 
 exports.createGroup = async (req, res) => {
@@ -140,6 +141,57 @@ exports.getGroupById = async (req, res) => {
   }
 };
 
+
+/**
+ * Assign a user to a group (and remove from previous group)
+ */
+exports.assignUserToGroup = async (req, res) => {
+  try {
+    const { userId, groupId } = req.body;
+    if (!userId || !groupId) {
+      return res.status(400).json({ success: false, message: "userId and groupId are required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const group = await ExperimentGroup.findById(groupId);
+    if (!group) return res.status(404).json({ success: false, message: "Group not found" });
+
+    // Remove from old group if exists
+    if (user.groupId && user.groupId.toString() !== groupId) {
+      await ExperimentGroup.findByIdAndUpdate(user.groupId, { $pull: { users: userId } });
+    }
+
+    // Set user's groupId
+    user.groupId = groupId;
+    await user.save();
+
+    // Add to new group's users array
+    await ExperimentGroup.findByIdAndUpdate(groupId, { $addToSet: { users: userId } });
+
+    res.status(200).json({ success: true, message: "User assigned to group successfully", data: { userId, groupId } });
+  } catch (err) {
+    console.error("Error assigning user to group:", err);
+    res.status(500).json({ success: false, message: "Failed to assign user to group", error: err.message });
+  }
+};
+
+/**
+ * Get users in a specific group
+ */
+exports.getGroupUsers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const group = await ExperimentGroup.findById(id).populate("users", "username email profilePic role anonymizedId");
+    if (!group) return res.status(404).json({ success: false, message: "Group not found" });
+
+    res.status(200).json({ success: true, data: group.users });
+  } catch (err) {
+    console.error("Error fetching group users:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch group users", error: err.message });
+  }
+};
 
 exports.deleteGroup = async (req, res) => {
   try {

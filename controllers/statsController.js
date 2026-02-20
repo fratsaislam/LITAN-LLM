@@ -2,6 +2,7 @@ const User = require("../models/userModel");
 const Exercise = require("../models/Exercise");
 const ExperimentGroup = require("../models/ExperimentGroup");
 const Conversation = require("../models/Conversation");
+const UserExercise = require("../models/UserExercise");
 
 /**
  * Get total user count
@@ -92,6 +93,38 @@ exports.getTotalConversations = async (req, res) => {
             message: "Failed to fetch total conversations",
             error: err.message
         });
+    }
+};
+
+/**
+ * Get stats for the current authenticated user
+ */
+exports.getMyStats = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const [totalConversations, totalExercises, completedExercises, inProgressExercises] = await Promise.all([
+            Conversation.countDocuments({ anonymizedUserId: user.anonymizedId }),
+            UserExercise.countDocuments({ userId }),
+            UserExercise.countDocuments({ userId, status: "completed" }),
+            UserExercise.countDocuments({ userId, status: "in_progress" }),
+        ]);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                totalConversations,
+                totalExercises,
+                completedExercises,
+                inProgressExercises,
+                assignedExercises: totalExercises - completedExercises - inProgressExercises,
+            },
+        });
+    } catch (err) {
+        console.error("Error fetching user stats:", err);
+        res.status(500).json({ success: false, message: "Failed to fetch stats", error: err.message });
     }
 };
 

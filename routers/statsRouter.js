@@ -3,6 +3,10 @@ const router = express.Router();
 
 const statsController = require('../controllers/statsController');
 const { adminCheck } = require('../middlewares/adminOnly');
+const { identifier } = require('../middlewares/identification');
+
+// User stats
+router.get('/my', identifier, statsController.getMyStats);
 
 // Admin only - statistics endpoints
 router.get('/users', adminCheck, statsController.getTotalUsers);
