@@ -11,6 +11,7 @@ const authRouter = require("./routers/authRouter");
 const groupRouter = require("./routers/groupRouter");
 const exerciseRouter = require("./routers/exerciseRouter");
 const convRouter = require("./routers/convRouter");
+const statsRouter = require("./routers/statsRouter");
 
 
 const allowedOrigins = [
@@ -39,6 +40,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/groups", groupRouter);
 app.use("/api/exercises", exerciseRouter);
 app.use("/api/conv", convRouter);
+app.use("/api/stats", statsRouter);
 
 
 
