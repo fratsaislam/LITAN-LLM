@@ -122,6 +122,10 @@ exports.googleOAuth = async (req, res) => {
                 message: 'Google account not verified or invalid' 
             });
         }
+        const {error, value} = signupSchema.validate({ email })
+        if(error){
+            return res.status(401).json({ success: false, message: error.details[0].message });
+        }
         
         // Determine environment ONCE at the top
         const isProduction = process.env.NODE_ENV === 'production';

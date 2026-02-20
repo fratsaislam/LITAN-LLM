@@ -4,7 +4,9 @@ exports.signupSchema = Joi.object({
     email: Joi.string().min(6).max(60).required()
       .email({
         tlds: { allow: ['com', 'net', 'dz'] },
-      }),
+      }).pattern(/@estin\.com$/).messages({
+      "string.pattern.base": "Email must be an @estin.com address"
+    }),
     password: Joi.string().required().pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$')),
     username: Joi.string().required().pattern(/^[A-Za-z]+$/),
     phone: Joi.string().required().pattern(/^\d{10}$/),
