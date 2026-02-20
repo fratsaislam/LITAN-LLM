@@ -73,7 +73,8 @@ exports.signin = async (req, res) => {
             phone: existingUser.phone,
             verified: existingUser.verified,
             profilePic: existingUser.profilePic,
-            role: existingUser.role
+            role: existingUser.role,
+            anonymizedId: existingUser.anonymizedId
         },process.env.TOKEN_SECRET,
         {
             expiresIn: '8h',
@@ -136,7 +137,8 @@ exports.googleOAuth = async (req, res) => {
                 phone: existingUser.phone,
                 verified: existingUser.verified,
                 profilePic: existingUser.profilePic,
-                role: existingUser.role
+                role: existingUser.role,
+                anonymizedId: existingUser.anonymizedId
             }, process.env.TOKEN_SECRET, { expiresIn: '8h' });
             
             return res.cookie('Authorization', `Bearer ${token}`, {
@@ -155,7 +157,8 @@ exports.googleOAuth = async (req, res) => {
         // NEW USER - create account
         const randomPass = Math.random().toString(36).slice(-12);
         const hashedPassword = await doHash(randomPass, 12);
-        
+        const anonymizedId = uuidv4();
+
         const newUser = await User.create({
             email,
             password: hashedPassword,
@@ -163,7 +166,8 @@ exports.googleOAuth = async (req, res) => {
             profilePic: picture,
             phone: 0,
             // birth: new Date(),
-            verified: true
+            verified: true,
+            anonymizedId
         });
         
         const token = jwt.sign({
@@ -173,7 +177,8 @@ exports.googleOAuth = async (req, res) => {
             phone: newUser.phone,
             verified: newUser.verified,
             profilePic: newUser.profilePic,
-            role: newUser.role
+            role: newUser.role,
+            anonymizedId: newUser.anonymizedId
         }, process.env.TOKEN_SECRET, { expiresIn: '8h' });
         
         return res.cookie('Authorization', `Bearer ${token}`, {
