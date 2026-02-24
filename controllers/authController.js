@@ -408,6 +408,8 @@ exports.changeInformation = async (req, res) => {
             });
 
             existingUser.profilePic = url.secure_url;
+        } else if (req.body.removeProfilePic === 'true') {
+            existingUser.profilePic = '';
         }
         const data = await existingUser.save();
         const token = jwt.sign({
@@ -417,7 +419,8 @@ exports.changeInformation = async (req, res) => {
             phone: existingUser.phone,
             verified: existingUser.verified,
             profilePic: existingUser.profilePic,
-            role: existingUser.role
+            role: existingUser.role,
+            anonymizedId: existingUser.anonymizedId
         },process.env.TOKEN_SECRET,
         {
             expiresIn: '8h',
